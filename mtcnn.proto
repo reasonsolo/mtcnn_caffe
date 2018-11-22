@@ -1,0 +1,9 @@
+message Datum {
+  optional bytes img = 1;
+  optional int32 label = 2;
+  repeated float bbox = 3;
+  repeated float landm = 4;
+  optional int32 w = 5;
+  optional int32 h = 6;
+  optional int32 c = 7;
+}
