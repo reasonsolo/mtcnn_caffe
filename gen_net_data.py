@@ -5,7 +5,7 @@ import numpy.random as npr
 import cv2
 
 import config
-from wider_loader import iterate_wider
+from dataset_loader import iterate_wider, iterate_lfw
 from utils import IoU
 
 
@@ -40,26 +40,26 @@ def lfw_iter_func(lfw_dir, save_dir, img_size, with_landm5=False):
     for dt in ['pos', 'neg', 'part', 'landm5']:
         indices[dt] = 0
 
-    lfw_anno_file = 'trainImageList.txt'
     def gen_data(img_name, bboxes, landm5):
         img_path = os.path.join(lfw_dir, img_name)
         img = cv2.imread(img_path)
         nboxes = np.array(bboxes, dtype=np.float32).reshape(-1, 4)
-        nlandm5 = np.array(landm5, dtype=np.float32).reshape(-1, 5 * 2)
+        nlandm5s = np.array(landm5, dtype=np.float32).reshape(-1, 5, 2)
 
         # cropped box and bounding box
-        for (cbox, size), bbox in gen_crop_boxes(img, nboxes):
+        for (cbox, size), bbox in gen_crop_boxes(img, nboxes, img_size):
             if cbox is None:
                 continue
             iou = IoU(cbox, nboxes)
             store_gen_box(save_dir, img, cbox, size, bbox, iou, files, indices)
         if with_landm5:
-            for img, bbox, landm5 in disturb_transform(img, bbox, landm5):
-                pass
+            for (cbox, size), bbox, clandm5 in disturb_transform(img, nboxes, nlandm5s, img_size):
+                iou = IoU(cbox, nboxes)
+                store_gen_box_landm5(save_dir, img, cbox, size, bbox, iou, clandm5, files. indices)
 
         print("generate %s subimages for %s" % (str(indices), img_path))
 
-def gen_crop_boxes(img, bboxes):
+def gen_crop_boxes(img, bboxes, img_size):
     for i in range(0, 50):
         yield gen_rand_box(img, img_size), None
     for bbox in bboxes:
@@ -122,6 +122,16 @@ def gen_pos_box(img, img_size, box):
         return None, None
     return [nx1, ny1, nx2, ny2], size
 
+def disturb_transform(img, bboxes, landm5s, img_sizes):
+    for bbox, landm5 in zip(bboxes, landm5s):
+        for i in range(0, 5):
+            cbox, size = gen_pos_box(img, img_size, bbox)
+            offset_x, offset_y = cbox[0] - bbox[0], cbox[1] - bbox[1]
+            transformed_landm5 = [(x - offset_x, y - offset_y) for x, y in landm5]
+            yield (cbox, size), bbox, transformed_landm5
+
+
+
 def store_gen_box(save_dir, img, cbox, size, bbox, iou, data_files, indices):
     max_iou = np.max(iou)
     if bbox is None or max_iou < 0.3:
@@ -157,7 +167,7 @@ def store_gen_box_landm5(save_dir, img, cbox, size, bbox, iou, landm5, data_file
         top = cbox[1]
         offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
         norm_landm5 = [(float(x - left) / size, float(y - top) / size) for x, y in landm5]
-        landm5_label = ' '.join([x for point in norm_landm5 for x in point])
+        landm5_label = ' '.join(['%0.6f' % x for point in norm_landm5 for x in point])
         label = "%d %s %s\n" % (config.DATA_TYPES[dt], offset, landm5_label)
     elif max_iou > 0.4:
         dt = 'part'
@@ -183,8 +193,11 @@ if __name__ == '__main__':
     net = sys.argv[1]
     script_type = os.path.join(sys.argv[2])
     wider_dir = os.path.join(config.WIDER_DIR, 'WIDER_%s' % script_type)
-    anno_file = 'wider_face_%s_bbx_gt.txt' % script_type
-    anno_path = os.path.join(wider_dir, 'wider_face_split', anno_file)
+    wider_anno_file = 'wider_face_%s_bbx_gt.txt' % script_type
+    wider_anno_path = os.path.join(wider_dir, 'wider_face_split', anno_file)
+    lfw_dir   = os.path.join(config.LFW_DIR, 'lfw_%s' % script_type)
+    lfw_anno_file = '%sImageList.txt' % script_type
+    lfw_anno_path = os.path.join(lfw_dir, lfw_anno_file)
     save_dir  = os.path.join('data_%s' % script_type, net)
     try:
         os.makedirs(save_dir)
@@ -199,5 +212,6 @@ if __name__ == '__main__':
     img_size = config.NET_IMG_SIZES[net]
     print("generate %s data size %d read wider from %s save file to %s" \
           % (net, img_size, wider_dir, save_dir))
-    iterate_wider(anno_path,  wider_iter_func(wider_dir, save_dir, img_size))
+    iterate_wider(wider_anno_path,  wider_iter_func(wider_dir, save_dir, img_size))
+    iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size))
 
