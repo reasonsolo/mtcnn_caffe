@@ -60,10 +60,10 @@ layer {
   }
 }
 layer {
-  name: "conv2_"
+  name: "conv2"
   type: "Convolution"
   bottom: "max_pooling2d_3"
-  top: "conv2_"
+  top: "conv2"
   convolution_param {
     num_output: 14
     bias_term: true
@@ -78,7 +78,7 @@ layer {
 layer {
   name: "batch_normalization_6"
   type: "BatchNorm"
-  bottom: "conv2_"
+  bottom: "conv2"
   top: "batch_normalization_6"
   batch_norm_param {
     moving_average_fraction: 0.990000009537
@@ -142,10 +142,10 @@ layer {
   top: "prelu3"
 }
 layer {
-  name: "classifier1"
+  name: "conv4-1"
   type: "Convolution"
   bottom: "prelu3"
-  top: "classifier1"
+  top: "conv4-1"
   convolution_param {
     num_output: 2
     bias_term: true
@@ -160,7 +160,7 @@ layer {
 layer {
   name: "prob1"
   type: "Softmax"
-  bottom: "classifier1"
+  bottom: "conv4-1"
   top: "prob1"
 }
 layer {

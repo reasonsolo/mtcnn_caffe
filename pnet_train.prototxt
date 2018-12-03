@@ -1,27 +1,23 @@
 name: "PNet"
 layer {
-  name: "PythonLayer"
+  name: "train_data"
   type: "Python"
-  top: "data"
+  top: "img"
   top: "label"
   top: "bbox"
-  # top: "landmark"
   python_param {
     module: "python_layer"
     layer: "DataLayer"
-    param_str: '{"net": "pnet", "batch": 64}'
+    param_str: '{"net": "pnet", "batch": 128}'
   }
   include {
     phase: TRAIN
-  }
-  include {
-    phase: TEST
   }
 }
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "img"
   top: "conv1"
   param { lr_mult: 1 decay_mult: 1 }
   # learning rate and decay multipliers for the biases
@@ -31,8 +27,7 @@ layer {
     kernel_size: 3
     stride: 1
     weight_filler {
-      type: "gaussian"
-      std: 0.001
+      type: "xavier"
     }
     bias_filler {
       type: "constant"
@@ -192,17 +187,48 @@ layer {
 }
 
 layer {
+  name: "conv4-2"
+  type: "Convolution"
+  bottom: "prelu3"
+  top: "conv4-2"
+  convolution_param {
+    num_output: 4
+    bias_term: true
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
   name: "label_bridge"
   type: "Python"
   bottom: "conv4-1"
   bottom: "label"
+  bottom: "conv4-2"
+  bottom: "bbox"
   top: "conv4-1-valid"
   top: "label-valid"
+  top: "conv4-2-valid"
+  top: "bbox-valid"
+  propagate_down: 1
+  propagate_down: 0
+  propagate_down: 1
+  propagate_down: 0
   python_param {
     module: "python_layer"
     layer:  "LabelBridgeLayer"
   }
+  include {
+    phase: TRAIN
+  }
 }
+
 layer {
   name: "label_loss"
   type: "SoftmaxWithLoss"
@@ -225,50 +251,15 @@ layer {
   include {
     phase: TRAIN
   }
-	include {
-		phase: TEST
-	}
-}
-layer {
-  name: "prob1"
-  type: "Softmax"
-  bottom: "conv4-1"
-  top: "prob1"
-}
-layer {
-  name: "conv4-2"
-  type: "Convolution"
-  bottom: "prelu3"
-  top: "conv4-2"
-  convolution_param {
-    num_output: 4
-    bias_term: true
-    kernel_size: 1
-    stride: 1
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
 }
 layer {
   name: "bbox_loss"
-  type: "Python"
-  bottom: "conv4-2"
-  bottom: "bbox"
+  type: "EuclideanLoss"
+  bottom: "conv4-2-valid"
+  bottom: "bbox-valid"
   top: "bbox_loss"
   loss_weight: 0.5
-  python_param {
-    module: "python_layer"
-    layer:  "RegressionLossLayer"
-  }
   include {
     phase: TRAIN
   }
-	include {
-		phase: TEST
-	}
 }

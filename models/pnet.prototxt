@@ -1,22 +1,27 @@
-input: "data"
-input_dim: 1
-input_dim: 3
-input_dim: 12
-input_dim: 12
+name: 'pnet'
+layer {
+    name: 'data'
+    type: 'Input'
+    top: 'img'
+    input_param {
+        shape: {
+            dim: 1
+            dim: 3
+            dim: 12
+            dim: 12
+        }
+    }
+}
 layer {
   name: "conv1"
   type: "Convolution"
-  bottom: "data"
+  bottom: "img"
   top: "conv1"
   convolution_param {
     num_output: 10
     bias_term: true
-    pad_h: 0
-    pad_w: 0
-    kernel_h: 3
-    kernel_w: 3
-    stride_h: 1
-    stride_w: 1
+    kernel_size: 3
+    stride: 1
   }
 }
 layer {
@@ -51,12 +56,8 @@ layer {
   top: "max_pooling2d_3"
   pooling_param {
     pool: MAX
-    kernel_h: 2
-    kernel_w: 2
-    stride_h: 2
-    stride_w: 2
-    pad_h: 0
-    pad_w: 0
+    kernel_size: 2
+    stride: 2
   }
 }
 layer {
@@ -67,12 +68,8 @@ layer {
   convolution_param {
     num_output: 14
     bias_term: true
-    pad_h: 0
-    pad_w: 0
-    kernel_h: 3
-    kernel_w: 3
-    stride_h: 1
-    stride_w: 1
+    kernel_size: 3
+    stride: 1
   }
 }
 layer {
@@ -108,12 +105,8 @@ layer {
   convolution_param {
     num_output: 16
     bias_term: true
-    pad_h: 0
-    pad_w: 0
-    kernel_h: 3
-    kernel_w: 3
-    stride_h: 1
-    stride_w: 1
+    kernel_size: 3
+    stride: 1
   }
 }
 layer {
@@ -142,25 +135,21 @@ layer {
   top: "prelu3"
 }
 layer {
-  name: "classifier1"
+  name: "conv4-1"
   type: "Convolution"
   bottom: "prelu3"
-  top: "classifier1"
+  top: "conv4-1"
   convolution_param {
     num_output: 2
     bias_term: true
-    pad_h: 0
-    pad_w: 0
-    kernel_h: 1
-    kernel_w: 1
-    stride_h: 1
-    stride_w: 1
+    kernel_size: 1
+    stride: 1
   }
 }
 layer {
   name: "prob1"
   type: "Softmax"
-  bottom: "classifier1"
+  bottom: "conv4-1"
   top: "prob1"
 }
 layer {
@@ -171,11 +160,7 @@ layer {
   convolution_param {
     num_output: 4
     bias_term: true
-    pad_h: 0
-    pad_w: 0
-    kernel_h: 1
-    kernel_w: 1
-    stride_h: 1
-    stride_w: 1
+    kernel_size: 1
+    stride: 1
   }
 }

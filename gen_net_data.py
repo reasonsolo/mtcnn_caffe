@@ -10,7 +10,7 @@ from utils import IoU
 
 
 def usage():
-    print('%s net wider_dir save_dir' % sys.argv[0])
+    print('%s [pnet|rnet|onet] [train|val|test]' % sys.argv[0])
 
 def wider_iter_func(wider_dir, save_dir, img_size):
     files = {}
@@ -32,8 +32,32 @@ def wider_iter_func(wider_dir, save_dir, img_size):
             store_gen_box(save_dir, img, cbox, size, bbox, iou, files, indices)
 
         print("generate %s subimages for %s" % (str(indices), img_path))
-
     return gen_data
+
+def lfw_iter_func(lfw_dir, save_dir, img_size, with_landm5=False):
+    files = {}
+    indices = {}
+    for dt in ['pos', 'neg', 'part', 'landm5']:
+        indices[dt] = 0
+
+    lfw_anno_file = 'trainImageList.txt'
+    def gen_data(img_name, bboxes, landm5):
+        img_path = os.path.join(lfw_dir, img_name)
+        img = cv2.imread(img_path)
+        nboxes = np.array(bboxes, dtype=np.float32).reshape(-1, 4)
+        nlandm5 = np.array(landm5, dtype=np.float32).reshape(-1, 5 * 2)
+
+        # cropped box and bounding box
+        for (cbox, size), bbox in gen_crop_boxes(img, nboxes):
+            if cbox is None:
+                continue
+            iou = IoU(cbox, nboxes)
+            store_gen_box(save_dir, img, cbox, size, bbox, iou, files, indices)
+        if with_landm5:
+            for img, bbox, landm5 in disturb_transform(img, bbox, landm5):
+                pass
+
+        print("generate %s subimages for %s" % (str(indices), img_path))
 
 def gen_crop_boxes(img, bboxes):
     for i in range(0, 50):
@@ -46,9 +70,9 @@ def gen_crop_boxes(img, bboxes):
         # omit invalid box or too small box
         if max(w, h) < 40 or min(w, h) / 2 <= img_size or x1 < 0 or y1 <0:
             continue
-        for i in range(0, 5):
+        for i in range(0, 4):
             yield gen_neg_box(img, img_size, bbox), bbox
-        for i in range(0, 20):
+        for i in range(0, 16):
             yield gen_pos_box(img, img_size, bbox), bbox
 
 def gen_rand_box(img, img_size):
@@ -99,14 +123,15 @@ def gen_pos_box(img, img_size, box):
     return [nx1, ny1, nx2, ny2], size
 
 def store_gen_box(save_dir, img, cbox, size, bbox, iou, data_files, indices):
-    if bbox is None or np.max(iou) < 0.3:
+    max_iou = np.max(iou)
+    if bbox is None or max_iou < 0.3:
         dt = 'neg'
         label = "%d\n" % (config.DATA_TYPES[dt])
-    elif np.max(iou) > 0.65:
+    elif max_iou > 0.65:
         dt = 'pos'
         offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
         label = "%d %s\n" % (config.DATA_TYPES[dt], offset)
-    elif np.max(iou) > 0.4:
+    elif max_iou > 0.4:
         dt = 'part'
         offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
         label = "%d %s\n" % (config.DATA_TYPES[dt], offset)
@@ -121,17 +146,46 @@ def store_gen_box(save_dir, img, cbox, size, bbox, iou, data_files, indices):
     indices[dt] += 1
     return dt
 
+def store_gen_box_landm5(save_dir, img, cbox, size, bbox, iou, landm5, data_files, indices):
+    max_iou = np.max(iou)
+    if bbox is None or max_iou < 0.3:
+        dt = 'neg'
+        label = "%d\n" % (config.DATA_TYPES[dt])
+    elif max_iou > 0.65:
+        dt = 'landm5'
+        left = cbox[0]
+        top = cbox[1]
+        offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
+        norm_landm5 = [(float(x - left) / size, float(y - top) / size) for x, y in landm5]
+        landm5_label = ' '.join([x for point in norm_landm5 for x in point])
+        label = "%d %s %s\n" % (config.DATA_TYPES[dt], offset, landm5_label)
+    elif max_iou > 0.4:
+        dt = 'part'
+        offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
+        label = "%d %s\n" % (config.DATA_TYPES[dt], offset)
+    else:
+        return
+
+    x1, y1, x2, y2 = cbox
+    croped_img = img[y1:y2, x1:x2]
+    resized_img = cv2.resize(croped_img, (size, size), interpolation=cv2.INTER_LINEAR)
+    save_img_file = os.path.join(save_dir, dt, '%s.jpg' % indices[dt])
+    cv2.imwrite(save_img_file, resized_img)
+    data_files[dt].write(save_img_file + " " + label)
+    indices[dt] += 1
+    return dt
 
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 3:
         usage()
-        os.exit(-1)
+        sys.exit(-1)
 
-    anno_file = 'wider_face_val_bbx_gt.txt'
     net = sys.argv[1]
-    wider_dir = os.path.join(sys.argv[2])
-    anno_path = os.path.join(sys.argv[2], anno_file)
-    save_dir  = os.path.join(sys.argv[3], net)
+    script_type = os.path.join(sys.argv[2])
+    wider_dir = os.path.join(config.WIDER_DIR, 'WIDER_%s' % script_type)
+    anno_file = 'wider_face_%s_bbx_gt.txt' % script_type
+    anno_path = os.path.join(wider_dir, 'wider_face_split', anno_file)
+    save_dir  = os.path.join('data_%s' % script_type, net)
     try:
         os.makedirs(save_dir)
     except:
