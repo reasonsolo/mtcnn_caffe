@@ -231,5 +231,5 @@ if __name__ == '__main__':
         files[dt] = open(os.path.join(save_dir, '%s_%s.txt' % (dt, net)), 'w')
 
     iterate_wider(wider_anno_path,  wider_iter_func(wider_dir, save_dir, img_size, indices, files))
-    iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, net != 'pnet'))
+    iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, True))
 

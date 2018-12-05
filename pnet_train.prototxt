@@ -5,10 +5,11 @@ layer {
   top: "img"
   top: "label"
   top: "bbox"
+  top: "landm5"
   python_param {
     module: "python_layer"
     layer: "DataLayer"
-    param_str: '{"net": "pnet", "batch": 128}'
+    param_str: '{"net": "pnet", "batch": 256}'
   }
   include {
     phase: TRAIN
@@ -212,10 +213,16 @@ layer {
   bottom: "label"
   bottom: "conv4-2"
   bottom: "bbox"
+  bottom: "conv4-3"
+  bottom: "landm5"
   top: "conv4-1-valid"
   top: "label-valid"
   top: "conv4-2-valid"
   top: "bbox-valid"
+  top: "conv4-3-valid"
+  top: "landm5-valid"
+  propagate_down: 1
+  propagate_down: 0
   propagate_down: 1
   propagate_down: 0
   propagate_down: 1
@@ -223,7 +230,7 @@ layer {
   python_param {
     module: "python_layer"
     layer:  "LabelBridgeLayer"
-    param_str: '{"net": "pnet", "batch": 128}'
+    param_str: '{"net": "pnet"}'
   }
   include {
     phase: TRAIN
@@ -259,6 +266,17 @@ layer {
   bottom: "conv4-2-valid"
   bottom: "bbox-valid"
   top: "bbox_loss"
+  loss_weight: 0.5
+  include {
+    phase: TRAIN
+  }
+}
+layer {
+  name: "landm5_loss"
+  type: "EuclideanLoss"
+  bottom: "conv4-3-valid"
+  bottom: "landm5-valid"
+  top: "landm5_loss"
   loss_weight: 0.5
   include {
     phase: TRAIN

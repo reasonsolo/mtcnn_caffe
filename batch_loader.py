@@ -20,7 +20,7 @@ class BatchLoader:
         self.total_entries = 0
         self.total_labels = 0
         self.total_bboxes = 0
-        self.total_landmark = 0
+        self.total_landm5 = 0
         for dt in config.DATA_TYPES:
             self.db_envs[dt]= lmdb.open("%s/%s.lmdb" % (self.db_path, dt),
                                         map_size=config.DB_MAPSIZES[dt])
@@ -33,12 +33,12 @@ class BatchLoader:
 
         self.task_dts_map = {'label': ['pos', 'neg', 'landm5'],
                              'bbox': ['pos', 'part'],
-                             'landmark': ['landmark']}
-        self.task_dts_ratios =  {'pos': 0.2, 'part': 0.2, 'neg': 0.6}
+                             'land5': ['landm5']}
+        self.task_dts_ratios =  {'pos': 0.15, 'part': 0.2, 'neg': 0.55, 'landm5': 0.1}
 
     def next_batch(self, batch, task):
         # return self.get_data(self.task_dts_map[task], batch)
-        return self.get_data(['neg', 'part', 'pos'], batch)
+        return self.get_data(['neg', 'part', 'pos', 'landm5'], batch)
 
     def get_data(self, dts, batch):
         # total = sum(self.db_entries[dt] for dt in dts)

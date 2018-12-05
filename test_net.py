@@ -85,14 +85,14 @@ def test_net(net, model_dir, iter_num):
         return partial(test_rnet, net=caffe_net)
 
 if __name__ == '__main__':
-    proto = sys.argv[1]
-    model = sys.argv[2]
-    net = caffe.Net(proto, model, caffe.TEST)
+    net = sys.argv[1]
+    iter_num = sys.argv[2]
+
+    test_func = test_net(net, config.MODEL_DIR, iter_num)
     img_path = sys.argv[3]
     img = cv2.imread(img_path)
 
-    print(img.shape)
-    rects = test_pnet(img, config.MIN_IMG_SIZE, config.NET_IMG_SIZES['pnet'], net)
+    rects = test_net(img, config.MIN_IMG_SIZE, config.NET_IMG_SIZES['pnet'])
     for i, rect in enumerate(rects):
         sub_img = img[rect[1]:rect[3], rect[0]:rect[2]]
         print(sub_img.shape, rect)

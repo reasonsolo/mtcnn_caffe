@@ -18,8 +18,15 @@ class MtcnnLossCallback(PlotLossCallback):
 
 if __name__ == '__main__':
     solver_prototxt = sys.argv[1]
+    max_steps = int(sys.argv[2])
+
     solver = caffe.SGDSolver(solver_prototxt)
-    callbacks = []
+    if len(sys.argv) > 3:
+        solver_state = sys.argv[3]
+        solver.restore(solver_state)
+    else:
+        solver.solve(max_steps)
+    # callbacks = []
     #report_label_loss = MtcnnLossCallback(1000, 'label_loss.png', True, 'label_loss')
     #report_bbox_loss = MtcnnLossCallback(1000, 'bbox_loss.png', True, 'bbox_loss')
     #callbacks.append({
@@ -33,6 +40,6 @@ if __name__ == '__main__':
     #    'interval': 1,
     #})
 
-    monitoring_solver = caffe_tools.solvers.MonitoringSolver(solver)
-    monitoring_solver.register_callback(callbacks)
-    monitoring_solver.solve(int(sys.argv[2]))
+    # monitoring_solver = caffe_tools.solvers.MonitoringSolver(solver)
+    # monitoring_solver.register_callback(callbacks)
+    # monitoring_solver.solve(int(sys.argv[2]))

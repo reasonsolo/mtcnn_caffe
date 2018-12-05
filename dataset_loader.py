@@ -8,7 +8,6 @@ def iterate_wider(anno_path, functor):
     """
     count = 0
     line_types = ["name", 'num', 'bbox']
-    data = []
     with open(anno_path, "r") as f:
         line_type = 'name'
         num = 0
@@ -35,7 +34,6 @@ def iterate_lfw(anno_path, functor):
     """
     functor(img_path, bboxes, landm5)
     """
-    data = []
     with open(anno_path, 'r') as f:
         for line in f:
             segs = line.split()
@@ -49,3 +47,23 @@ def iterate_lfw(anno_path, functor):
             except Exception as ex:
                 print(line)
                 raise ex
+
+
+def iterate_300W(dataset_dir, functor):
+    """
+    functor(img_path, pts)
+    """
+    for root, dirs, files in os.walk("."):
+        for pts_file in filter(lambda f: f.endswith('pts'), files):
+            img_file = pts_file[:-3] + 'jpg'
+            with open(pts_file, 'r') as ptsf:
+                pts = []
+                for line in ptsf[3:-1]:
+                    pt = [float(x) for x in line.split()]
+                    pts.append(tuple(pt))
+            try:
+                functor(img_path, pts)
+            except Exception as ex:
+                print(pts_file, img_file)
+                raise ex
+
