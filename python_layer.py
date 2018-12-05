@@ -59,7 +59,7 @@ class LabelBridgeLayer(caffe.Layer):
         top[3].reshape(len(bottom[2].data), 4)
 
         self.landm5_valid_index = np.where(label==config.DATA_TYPES['landm5'])[0]
-        self.landm5_count = len(self.bbox_valid_index)
+        self.landm5_count = len(self.landm5_valid_index)
         top[4].reshape(len(bottom[4].data), config.LANDMARK_SIZE * 2, 1, 1)
         top[5].reshape(len(bottom[4].data), config.LANDMARK_SIZE * 2)
 

@@ -66,7 +66,7 @@ class BatchLoader:
                         # elif dt == 'pos' or dt == 'part':
                         #     img = cv2.flip(img, 1)
                         #     bbox = [bbox[0], bbox[3], bbox[2], bbox[1]]
-                    data.append([img, datum.label, bbox, datum.landm])
+                    data.append([img, datum.label, bbox, datum.landm5])
                     self.db_indices[dt] += 1
         return data
 

@@ -25,7 +25,7 @@ def write_lmdb(txn, lines, net, dt):
         img = (img - 127.5) / 127.5
         label = int(segs[1])
         bbox  = [-1.0] * 4
-        landm = [-1.0] * config.LANDMARK_SIZE * 2
+        landm5 = [-1.0] * config.LANDMARK_SIZE * 2
         datum = mtcnn_pb2.Datum()
         datum.img = img.tobytes()
         if label != config.DATA_TYPES['neg']:
@@ -34,16 +34,16 @@ def write_lmdb(txn, lines, net, dt):
             else:
                 print('no enough bbox data in line %d' % num)
                 continue
-        if label == config.DATA_TYPES['landmark']:
-            if len(segs) == 6 + landmark_size * 2:
+        if label == config.DATA_TYPES['landm5']:
+            if len(segs) == 6 + config.LANDMARK_SIZE * 2:
                 pts = [float(x) for x in segs[6:]]
             else:
-                print('no enough landmark data in line %d' % num)
+                print('no enough landm5ark data in line %d' % num)
                 continue
         datum.label = label
         datum.bbox[:] = bbox
-        datum.landm[:] = landm
-        datum.c, datum.w, datum.h = c, img_size, img_size
+        datum.landm5[:] = landm5
+        datum.c, (datum.w, datum.h) = c, img_size
 
         txn.put(str(count).encode('ascii'), datum.SerializeToString())
         count += 1

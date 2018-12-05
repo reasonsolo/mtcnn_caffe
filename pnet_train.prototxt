@@ -207,6 +207,25 @@ layer {
   }
 }
 layer {
+  name: "conv4-3"
+  type: "Convolution"
+  bottom: "prelu3"
+  top: "conv4-3"
+  convolution_param {
+    num_output: 10
+    bias_term: true
+    kernel_size: 1
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
   name: "label_bridge"
   type: "Python"
   bottom: "conv4-1"

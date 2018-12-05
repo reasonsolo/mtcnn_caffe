@@ -56,6 +56,8 @@ def gen_crop_landm5(img, bboxes, landm5s, img_sizes):
     for bbox, landm5 in zip(bboxes, landm5s):
         for i in range(0, 5):
             cbox, size = gen_pos_box(img, img_size, bbox)
+            if cbox is None or bbox is None:
+                continue
             offset_x, offset_y = cbox[0] - bbox[0], cbox[1] - bbox[1]
             transformed_landm5 = [(x - offset_x -bbox[0], y - offset_y - bbox[1]) for x, y in landm5]
             yield (cbox, size), bbox, transformed_landm5
@@ -155,7 +157,7 @@ def gen_img_label(img, cbox, size, bbox, iou, landm5=None, with_landm5=False):
             dt = 'landm5'
             left = cbox[0]
             top = cbox[1]
-            offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
+            offset = ' '.join([ '%.6f' % (float(x - nx) / size) for x, nx in zip(bbox, cbox)])
             norm_landm5 = [(float(x) / size, float(y) / size) for x, y in landm5]
             # flip over x axis
             if npr.choice([0, 1]) == 1:
