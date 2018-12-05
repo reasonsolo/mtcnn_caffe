@@ -4,6 +4,7 @@ import cv2
 import random
 import numpy as np
 import lmdb
+import shutil
 
 import config as config
 import mtcnn_pb2
@@ -25,7 +26,7 @@ def write_lmdb(txn, lines, net, dt):
         img = (img - 127.5) / 127.5
         label = int(segs[1])
         bbox  = [-1.0] * 4
-        landm5 = [-1.0] * config.LANDMARK_SIZE * 2
+        landm5 = [-1.0] * (config.LANDMARK_SIZE * 2)
         datum = mtcnn_pb2.Datum()
         datum.img = img.tobytes()
         if label != config.DATA_TYPES['neg']:
@@ -64,7 +65,9 @@ if __name__ == '__main__':
         pass
 
     for dt in dts:
-        env = lmdb.open('%s/%s/%s.lmdb' % (config.DB_PATH, net, dt), map_size=config.DB_MAPSIZES[dt])
+        lmdb_path = '%s/%s/%s.lmdb' % (config.DB_PATH, net, dt)
+        shutil.rmtree(lmdb_path, ignore_errors=True)
+        env = lmdb.open(lmdb_path, map_size=config.DB_MAPSIZES[dt])
         with env.begin(write=True) as txn:
             img_list = '%s/%s/%s_%s.txt' % (data_dir, net, dt, net)
             print("open imglist ", img_list)

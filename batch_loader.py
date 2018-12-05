@@ -66,6 +66,9 @@ class BatchLoader:
                         # elif dt == 'pos' or dt == 'part':
                         #     img = cv2.flip(img, 1)
                         #     bbox = [bbox[0], bbox[3], bbox[2], bbox[1]]
+                    if len(datum.landm5) != 10:
+                        print("invalid landm5 ", datum.landm5)
+                        continue
                     data.append([img, datum.label, bbox, datum.landm5])
                     self.db_indices[dt] += 1
         return data

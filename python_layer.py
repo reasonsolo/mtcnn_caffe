@@ -26,11 +26,11 @@ class DataLayer(caffe.Layer):
         batch_data = self.batch_loader.next_batch(self.batch, task)
         random.shuffle(batch_data)
         for i, datum in enumerate(batch_data):
-            img, label, bbox, landmark = datum
+            img, label, bbox, landm5 = datum
             top[0].data[i, ...] = img
             top[1].data[i, ...] = label
             top[2].data[i, ...] = bbox
-            top[3].data[i, ...] = landmark
+            top[3].data[i, ...] = landm5
 
     def backward(self, bottom, top):
         pass
