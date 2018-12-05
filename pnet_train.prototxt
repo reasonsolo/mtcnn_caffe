@@ -223,6 +223,7 @@ layer {
   python_param {
     module: "python_layer"
     layer:  "LabelBridgeLayer"
+    param_str: '{"net": "pnet", "batch": 128}'
   }
   include {
     phase: TRAIN

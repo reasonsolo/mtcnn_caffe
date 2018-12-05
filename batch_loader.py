@@ -31,7 +31,7 @@ class BatchLoader:
         for dt in config.DATA_TYPES:
             self.label_ratio[dt] = self.db_entries[dt] / self.total_entries
 
-        self.task_dts_map = {'label': ['pos', 'neg'],
+        self.task_dts_map = {'label': ['pos', 'neg', 'landm5'],
                              'bbox': ['pos', 'part'],
                              'landmark': ['landmark']}
         self.task_dts_ratios =  {'pos': 0.2, 'part': 0.2, 'neg': 0.6}

@@ -40,23 +40,30 @@ class DataLayer(caffe.Layer):
 
 class LabelBridgeLayer(caffe.Layer):
     def setup(self, bottom, top):
-        if len(bottom) != 4:
-            raise Exception("Need 4 Inputs")
+        param = eval(self.param_str)
+        self.net = param['net']
 
     def reshape(self, bottom, top):
         label = bottom[1].data
         self.label_valid_index = np.where(np.logical_or(label==config.DATA_TYPES['pos'], label==config.DATA_TYPES['neg']))[0]
         self.label_count = len(self.label_valid_index)
+        top[0].reshape(len(bottom[0].data), 2, 1, 1)
+        top[1].reshape(len(bottom[0].data), 1)
+
         # self.pos_index = np.where(label == config.DATA_TYPES['pos'])[0]
         # self.part_index = np.where(label == config.DATA_TYPES['part'])[0]
         # self.neg_index = np.where(label == config.DATA_TYPES['neg'])[0]
         self.bbox_valid_index = np.where(label != config.DATA_TYPES['neg'])[0]
         self.bbox_count = len(self.bbox_valid_index)
-        top[0].reshape(len(bottom[0].data), 2, 1, 1)
-        top[1].reshape(len(bottom[0].data), 1)
 
         top[2].reshape(len(bottom[2].data), 4, 1, 1)
         top[3].reshape(len(bottom[2].data), 4)
+
+        if self.net != 'pnet':
+            self.landm5_valid_index = np.where(label==config.DATA_TYPES['landm5'])[0]
+            self.landm5_count = len(self.bbox_valid_index)
+            top[4].reshape(len(bottom[4].data), config.LANDMARK_SIZE * 2, 1, 1)
+            top[5].reshape(len(bottom[4].data), config.LANDMARK_SIZE * 2)
 
     def forward(self, bottom, top):
         # print(self.valid_index, self.part_index)
@@ -67,7 +74,6 @@ class LabelBridgeLayer(caffe.Layer):
         top[1].data[...][...] = 1
         top[2].data[...][...] = -1
         top[3].data[...][...] = -1
-
         # label_data = copy.copy(bottom[1].data)
         # label_data[self.part_index] = 1
         top[0].data[0:self.label_count] = bottom[0].data[self.label_valid_index]
@@ -75,6 +81,12 @@ class LabelBridgeLayer(caffe.Layer):
 
         top[2].data[0:self.bbox_count] = bottom[2].data[self.bbox_valid_index]
         top[3].data[0:self.bbox_count] = bottom[3].data[self.bbox_valid_index]
+
+        if self.net != 'pnet':
+            top[4].data[...][...] = -1
+            top[5].data[...][...] = -1
+            top[4].data[0:self.landm5_count] = bottom[4].data[self.landm5_valid_index]
+            top[5].data[0:self.landm5_count] = bottom[5].data[self.landm5_valid_index]
 
     def backward(self, top, propagate_down, bottom):
         bottom[0].diff[...] = 0
@@ -90,6 +102,15 @@ class LabelBridgeLayer(caffe.Layer):
             if pd == 1 and self.bbox_count != 0:
                 i = i+2
                 bottom[i].diff[self.bbox_valid_index] = top[i].diff[0:self.bbox_count]
+
+        if self.net != 'pnet':
+            bottom[4].diff[...] = np.zeros(bottom[4].diff.shape)
+            bottom[5].diff[...] = np.zeros(bottom[5].diff.shape)
+            for i, pd in enumerate(propagate_down[4:6]):
+                if pd == 1 and self.landm5_count != 0:
+                    i = i+4
+                    bottom[i].diff[self.landm5_valid_index] = top[i].diff[0:self.landm5_count]
+
 
 class RegressionLossLayer(caffe.Layer):
     def setup(self,bottom,top):

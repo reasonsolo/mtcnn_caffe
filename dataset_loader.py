@@ -36,10 +36,16 @@ def iterate_lfw(anno_path, functor):
     functor(img_path, bboxes, landm5)
     """
     data = []
-    with open('anno_path', 'r') as f:
+    with open(anno_path, 'r') as f:
         for line in f:
             segs = line.split()
-            img_name = segs[0]
-            bbox = [int(x) for x in segs[1:5]]
+            img_name = segs[0].replace('\\', '/')
+            box = [int(x) for x in segs[1:5]]
+            bbox = [box[0], box[2], box[1], box[3]]
             landm5 = [float(x) for x in segs[5:]]
-            functor(img_name , bbox, landm5)
+            assert(len(landm5) == 10)
+            try:
+                functor(img_name, bbox, landm5)
+            except Exception as ex:
+                print(line)
+                raise ex
