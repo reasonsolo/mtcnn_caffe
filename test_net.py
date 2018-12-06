@@ -53,10 +53,10 @@ def test_pnet(img, min_img_size, net_size, net):
         out_h, out_w = label_prob.shape
         out_side = max(out_h, out_w)
         rect = tools.detect_face_12net(label_prob, bbox, out_side,
-                                       1 / scale, w, h, 0.7)
+                                       1 / scale, w, h, 0.75)
         rects += rect
 
-    rects = tools.NMS(rects, 0.7, 'iou')
+    rects = tools.NMS(rects, 0.75, 'iou')
     return rects
 
 def test_rnet(img, rects, min_img_size, net_size, net):

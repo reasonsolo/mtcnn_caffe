@@ -34,11 +34,11 @@ class BatchLoader:
         self.task_dts_map = {'label': ['pos', 'neg', 'landm5'],
                              'bbox': ['pos', 'part'],
                              'land5': ['landm5']}
-        self.task_dts_ratios =  {'pos': 0.15, 'part': 0.2, 'neg': 0.55, 'landm5': 0.1}
+        self.task_dts_ratios =  config.DATA_TYPE_RATIOS[self.net]
 
     def next_batch(self, batch, task):
         # return self.get_data(self.task_dts_map[task], batch)
-        return self.get_data(['neg', 'part', 'pos', 'landm5'], batch)
+        return self.get_data(self.task_dts_ratios.keys(), batch)
 
     def get_data(self, dts, batch):
         # total = sum(self.db_entries[dt] for dt in dts)

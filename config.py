@@ -7,6 +7,11 @@ NET_OUTPUTS = {
 }
 
 DATA_TYPES = {'pos': 1, 'neg': 0, 'part': 2, 'landm5': 3}
+DATA_TYPE_RATIOS = {
+    'pnet': {'pos': 0.2, 'part': 0.2, 'neg': 0.6},  # suppress landm5 for pnet
+    'rnet': {'pos': 0.1, 'part': 0.15, 'neg': 0.55, 'landm5': 0.1},
+    'rnet': {'pos': 0.1, 'part': 0.15, 'neg': 0.5, 'landm5': 0.15},
+}
 MAX_EXAMPLES = {'pos': 12, 'neg': 50, 'part': 24}
 
 LANDMARK_SIZE = 5

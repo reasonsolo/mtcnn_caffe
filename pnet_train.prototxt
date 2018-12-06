@@ -5,7 +5,7 @@ layer {
   top: "img"
   top: "label"
   top: "bbox"
-  top: "landm5"
+  # top: "landm5"
   python_param {
     module: "python_layer"
     layer: "DataLayer"
@@ -206,25 +206,25 @@ layer {
     }
   }
 }
-layer {
-  name: "conv4-3"
-  type: "Convolution"
-  bottom: "prelu3"
-  top: "conv4-3"
-  convolution_param {
-    num_output: 10
-    bias_term: true
-    kernel_size: 1
-    stride: 1
-    weight_filler {
-      type: "xavier"
-    }
-    bias_filler {
-      type: "constant"
-      value: 0
-    }
-  }
-}
+#layer {
+#  name: "conv4-3"
+#  type: "Convolution"
+#  bottom: "prelu3"
+#  top: "conv4-3"
+#  convolution_param {
+#    num_output: 10
+#    bias_term: true
+#    kernel_size: 1
+#    stride: 1
+#    weight_filler {
+#      type: "xavier"
+#    }
+#    bias_filler {
+#      type: "constant"
+#      value: 0
+#    }
+#  }
+#}
 layer {
   name: "label_bridge"
   type: "Python"
@@ -232,20 +232,20 @@ layer {
   bottom: "label"
   bottom: "conv4-2"
   bottom: "bbox"
-  bottom: "conv4-3"
-  bottom: "landm5"
+  #bottom: "conv4-3"
+  #bottom: "landm5"
   top: "conv4-1-valid"
   top: "label-valid"
   top: "conv4-2-valid"
   top: "bbox-valid"
-  top: "conv4-3-valid"
-  top: "landm5-valid"
+  # top: "conv4-3-valid"
+  # top: "landm5-valid"
   propagate_down: 1
   propagate_down: 0
   propagate_down: 1
   propagate_down: 0
-  propagate_down: 1
-  propagate_down: 0
+  #propagate_down: 1
+  #propagate_down: 0
   python_param {
     module: "python_layer"
     layer:  "LabelBridgeLayer"
@@ -290,14 +290,14 @@ layer {
     phase: TRAIN
   }
 }
-layer {
-  name: "landm5_loss"
-  type: "EuclideanLoss"
-  bottom: "conv4-3-valid"
-  bottom: "landm5-valid"
-  top: "landm5_loss"
-  loss_weight: 0.5
-  include {
-    phase: TRAIN
-  }
-}
+#layer {
+#  name: "landm5_loss"
+#  type: "EuclideanLoss"
+#  bottom: "conv4-3-valid"
+#  bottom: "landm5-valid"
+#  top: "landm5_loss"
+#  loss_weight: 0.5
+#  include {
+#    phase: TRAIN
+#  }
+#}
