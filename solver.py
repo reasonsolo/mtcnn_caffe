@@ -24,9 +24,8 @@ if __name__ == '__main__':
     if len(sys.argv) > 3:
         solver_state = sys.argv[3]
         solver.restore(solver_state)
-    else:
-        for i in range(0, max_steps):
-            solver.step(1)
+    for i in range(0, max_steps):
+        solver.step(1)
     # callbacks = []
     #report_label_loss = MtcnnLossCallback(1000, 'label_loss.png', True, 'label_loss')
     #report_bbox_loss = MtcnnLossCallback(1000, 'bbox_loss.png', True, 'bbox_loss')
