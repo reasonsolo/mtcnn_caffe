@@ -37,7 +37,7 @@ def wider_hard_example_test(net, wider_dir, save_dir, detect_func, indices, file
                 img_dt_indices[dt] += 1
                 indices[dt] += 1
                 cropped_img = img[rect[1]:rect[3], rect[0]:rect[2]]
-                store_rect_data(save_dir, img_size, dt, cropped_img, label, files[dt])
+                store_rect_data(save_dir, img_size, dt, cropped_img, label, files[dt], indices[dt])
             else:
                 indices['ignore'] += 1
             if all(config.MAX_EXAMPLES[dt] == img_dt_indices[dt] for dt in config.DATA_TYPES):
@@ -45,9 +45,9 @@ def wider_hard_example_test(net, wider_dir, save_dir, detect_func, indices, file
         print("generate %s subimages for %s rects %d" % (str(indices), img_path, len(rects)))
     return gen_data
 
-def store_rect_data(save_dir, size, dt, cropped_img, label, f):
+def store_rect_data(save_dir, size, dt, cropped_img, label, f, index):
     resized_img = cv2.resize(cropped_img, (size, size), interpolation=cv2.INTER_LINEAR)
-    save_img_file = os.path.join(save_dir, dt, '%s.jpg' % indices[dt])
+    save_img_file = os.path.join(save_dir, dt, '%s.jpg' % index)
     cv2.imwrite(save_img_file, resized_img)
     f.write(save_img_file + " " + label + "\n")
 

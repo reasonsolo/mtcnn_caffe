@@ -48,6 +48,22 @@ def iterate_lfw(anno_path, functor):
                 print(line)
                 raise ex
 
+def iterate_celeba_align(anno_path, functor):
+    """
+    functor(img_path, landm5)
+    """
+    with open(anno_path, 'r') as f:
+        for line in f[2:]:
+            segs = line.split()
+            image_name = segs[0]
+            landm5 = [float(x) for x in segs[1:]]
+            assert(len(landm5) == 10)
+            try:
+                fucntor(img_name, landm5)
+            except Exception as ex:
+                print(line)
+                raise ex
+
 
 def iterate_300W(dataset_dir, functor):
     """

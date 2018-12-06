@@ -3,6 +3,7 @@ import os
 import numpy as np
 import numpy.random as npr
 import cv2
+from collections import defaultdict
 
 import config
 from dataset_loader import iterate_wider, iterate_lfw
@@ -23,8 +24,12 @@ def wider_iter_func(wider_dir, save_dir, img_size, indices, files):
             if cbox is None:
                 continue
             iou = IoU(cbox, nboxes)
-            store_gen_box(save_dir, img, cbox, size, bbox, iou, files, indices)
-
+            dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, None, True)
+            if dt != '':
+                store_gen_box(save_dir, img_size, dt, cropped_img, label, files[dt], indices[dt])
+                indices[dt] += 1
+            else:
+                indices['ignore'] += 1
         print("generate %s subimages for %s" % (str(indices), img_path))
     return gen_data
 
@@ -32,7 +37,6 @@ def lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, with_landm5=True)
     print("gen data for lfw with landmark5 %s" % with_landm5)
     def gen_data(img_name, bboxes, landm5):
         img_path = os.path.join(lfw_dir, img_name)
-        print(img_path)
         img = cv2.imread(img_path)
         nboxes = np.array(bboxes, dtype=np.float32).reshape(-1, 4)
         nlandm5s = np.array(landm5, dtype=np.float32).reshape(-1, 5, 2)
@@ -43,16 +47,70 @@ def lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, with_landm5=True)
         #         continue
         #     iou = IoU(cbox, nboxes)
         #     store_gen_box(save_dir, img, cbox, size, bbox, iou, files, indices)
-        for (cbox, size), bbox, clandm5 in gen_crop_landm5(img, nboxes, nlandm5s, img_size):
+        for (cbox, size), bbox, clandm5 in gen_crop_bbox_landm5(img, nboxes, nlandm5s, img_size):
             if cbox is None:
                 continue
             iou = IoU(cbox, nboxes)
-            store_gen_box_lfw(save_dir, img, cbox, size, bbox, iou, clandm5, files, indices, with_landm5)
+            dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, landm5, True)
+            if dt != '':
+                store_gen_box_lfw(save_dir, img_size, dt, cropped_img, label, files[dt], indices[dt])
+                indices[dt] += 1
+            else:
+                indices['ignore'] += 1
 
         print("generate %s subimages for %s" % (str(indices), img_path))
     return gen_data
 
-def gen_crop_landm5(img, bboxes, landm5s, img_sizes):
+def celeba_iter_func(celeba_dir, save_dir, img_size, indices, files, store_img=False):
+    """
+    not modifying celeba aligned images
+    """
+    def gen_data(img_name, landm5):
+        img_path = os.path.join(celeba_dir, img_name)
+        img = cv2.imread(img_path)
+        # TODO
+        dt = 'landm5'
+        cropped_img, nlandm5 = gen_crop_landm5(img, landm5)
+        h, w, _ = cropped_img.shape
+        norm_landm5 = [(float(x) / w, float(y) / h) for x, y in nlandm5]
+        label = str(config.DATA_TYPES[dt])
+        label += ' -1' * 4    # placeholders for bbox
+        lable += ' '.join(['%.6f %.6f' % (x, y) for x, y in norm_landm5])
+        resized_img = cv2.resize(cropped_img, (img_size, img_size), interpolation=cv2.INTER_LINEAR)
+        save_img_file = os.path.join(save_dir, dt, '%s.jpg' % indices[dt])
+        cv2.imwrite(save_img_file, resized_img)
+        files[dt].write(save_img_file + " " + label)
+
+        if store_img and dt == 'landm5':
+            recovered_landm5 = [(int(x * w), int(y * h)) for (x, y) in norm_landm5]
+            for pt in recovered_landm5:
+                cv2.circle(cropped_img, pt, 2, (0,0,255), -1)
+                save_img_file = os.path.join('landm5', '%s.jpg' % indices[dt])
+                cv2.imwrite(save_img_file, cropped_img)
+        print("generate %s subimages for %s" % (str(indices), img_path))
+    return gen_data
+
+def gen_crop_landm5(img, landm5):
+    # generate bbox larger than landm5 but smaller than celeba align
+    h, w, c = img.shape
+    nlandm5 = np.array(landm5)
+    transposed = nlandm5.T
+    min_x, max_x = np.min(transposed[0]), np.max(transposed[0])
+    min_y, max_y = np.min(transposed[1]), np.max(transposed[1])
+
+    pad_width = min(20, (max_x - min_x) * 0.5)
+    pad_height = min(25, (max_y - min_y)* 0.5)
+
+    left = max(0, min_x - pad_width)
+    right = min(max_x + pad_width, w)
+    top = max(0, min_y - pad_height)
+    bottom = min(max_y + pad_height, h)
+
+    offset_x, offset_y = left - min_x, top - min_y
+    return img[top:bottom, left:right], nlandm5 + np.array([offset_x, offset_y])
+
+
+def gen_crop_bbox_landm5(img, bboxes, landm5s, img_size):
     for bbox, landm5 in zip(bboxes, landm5s):
         for i in range(0, 5):
             cbox, size = gen_pos_box(img, img_size, bbox)
@@ -131,16 +189,11 @@ def gen_pos_box(img, img_size, box):
         return None, None
     return [nx1, ny1, nx2, ny2], size
 
-
-def store_gen_box(save_dir, img, cbox, size, bbox, iou, data_files, indices):
-    dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou)
-    if dt != '':
-        resized_img = cv2.resize(cropped_img, (size, size), interpolation=cv2.INTER_LINEAR)
-        save_img_file = os.path.join(save_dir, dt, '%s.jpg' % indices[dt])
-        cv2.imwrite(save_img_file, resized_img)
-        data_files[dt].write(save_img_file + " " + label)
-        indices[dt] += 1
-    return dt
+def store_gen_box(save_dir, dt, cropped_img, label, size, data_file, index):
+    resized_img = cv2.resize(cropped_img, (size, size), interpolation=cv2.INTER_LINEAR)
+    save_img_file = os.path.join(save_dir, dt, '%s.jpg' % index)
+    cv2.imwrite(save_img_file, resized_img)
+    data_file.write(save_img_file + " " + label)
 
 def gen_img_label(img, cbox, size, bbox, iou, landm5=None, with_landm5=False):
     dt = ''
@@ -151,7 +204,7 @@ def gen_img_label(img, cbox, size, bbox, iou, landm5=None, with_landm5=False):
     cropped_img = img[y1:y2, x1:x2]
     if bbox is None or max_iou < 0.3:
         dt = 'neg'
-        label = "%d\n" % (config.DATA_TYPES[dt])
+        label = "%d" % (config.DATA_TYPES[dt])
     elif max_iou > 0.65:
         if with_landm5 and len(landm5) == 5:
             dt = 'landm5'
@@ -167,35 +220,29 @@ def gen_img_label(img, cbox, size, bbox, iou, landm5=None, with_landm5=False):
                 flipped_landm5[[3, 4]] = flipped_landm5[[4, 3]]
                 norm_landm5 = flipped_landm5.reshape(5, 2)
             landm5_label = ' '.join(['%0.6f' % x for point in norm_landm5 for x in point])
-            label = "%d %s %s\n" % (config.DATA_TYPES[dt], offset, landm5_label)
+            label = "%d %s %s" % (config.DATA_TYPES[dt], offset, landm5_label)
         else:
             dt = 'pos'
-            offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
-            label = "%d %s\n" % (config.DATA_TYPES[dt], offset)
+            offset = ' '.join(['%.6f' % (float(x - nx) / size) for x, nx in zip(bbox, cbox)])
+            label = "%d %s" % (config.DATA_TYPES[dt], offset)
     elif max_iou > 0.4:
         dt = 'part'
-        offset = "%.6f %.6f %.6f %.6f" % tuple([float(x - nx) / size for x, nx in zip(bbox, cbox)])
-        label = "%d %s\n" % (config.DATA_TYPES[dt], offset)
+        offset = ' '.join(['%.6f' % (float(x - nx) / size) for x, nx in zip(bbox, cbox)])
+        label = "%d %s" % (config.DATA_TYPES[dt], offset)
 
     return dt, cropped_img, label
 
-def store_gen_box_lfw(save_dir, img, cbox, size, bbox, iou, landm5, data_files,
-                      indices, with_landm5, store_img=False):
-    dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, landm5, with_landm5)
-    if dt != '':
-        resized_img = cv2.resize(cropped_img, (size, size), interpolation=cv2.INTER_LINEAR)
-        save_img_file = os.path.join(save_dir, dt, '%s.jpg' % indices[dt])
-        cv2.imwrite(save_img_file, resized_img)
-        data_files[dt].write(save_img_file + " " + label)
-        indices[dt] += 1
-
-        if store_img and dt == 'landm5':
-            recovered_landm5 = [(int(x * size), int(y * size)) for (x, y) in norm_landm5]
-            for pt in recovered_landm5:
-                cv2.circle(cropped_img, pt, 2, (0,0,255), -1)
-                save_img_file = os.path.join('landm5', '%s.jpg' % indices[dt])
+def store_gen_box_lfw(save_dir, size, dt, cropped_img, label, f, index, store_img=False):
+    resized_img = cv2.resize(cropped_img, (size, size), interpolation=cv2.INTER_LINEAR)
+    save_img_file = os.path.join(save_dir, dt, '%s.jpg' % index)
+    cv2.imwrite(save_img_file, resized_img)
+    f.write(save_img_file + " " + label + "\n")
+    if store_img and dt == 'landm5':
+        recovered_landm5 = [(int(x * size), int(y * size)) for (x, y) in norm_landm5]
+        for pt in recovered_landm5:
+            cv2.circle(cropped_img, pt, 2, (0,0,255), -1)
+            save_img_file = os.path.join('landm5', '%s.jpg' % indices[dt])
             cv2.imwrite(save_img_file, cropped_img)
-    return dt
 
 if __name__ == '__main__':
     if len(sys.argv) != 3:
@@ -204,12 +251,19 @@ if __name__ == '__main__':
 
     net = sys.argv[1]
     script_type = os.path.join(sys.argv[2])
+
     wider_dir = os.path.join(config.WIDER_DIR, 'WIDER_%s' % script_type)
     wider_anno_file = 'wider_face_%s_bbx_gt.txt' % script_type
     wider_anno_path = os.path.join(wider_dir, 'wider_face_split', wider_anno_file)
+
     lfw_dir   = os.path.join(config.LFW_DIR, 'lfw_%s' % script_type)
     lfw_anno_file = '%sImageList.txt' % script_type
     lfw_anno_path = os.path.join(lfw_dir, lfw_anno_file)
+
+    celeba_dir   = os.path.join(config.CELEBA_DIR, 'img_align_celeba')
+    celeba_anno_file = 'list_landmarks_align_celeba.txt'
+    celeba_anno_path = os.path.join(config.CELEBA_DIR, lfw_anno_file)
+
     save_dir  = os.path.join('data_%s' % script_type, net)
     try:
         os.makedirs(save_dir)
@@ -226,12 +280,16 @@ if __name__ == '__main__':
           % (net, img_size, wider_dir, save_dir))
     # always iterate wider first
     files = {}
-    indices = {}
+    indices = defaultdict(int)
     for dt in config.DATA_TYPES:
         indices[dt] = 0
         # overwride daa file
         files[dt] = open(os.path.join(save_dir, '%s_%s.txt' % (dt, net)), 'w')
 
+    # bounding box
     iterate_wider(wider_anno_path,  wider_iter_func(wider_dir, save_dir, img_size, indices, files))
+    # bounding box and 5-points landmark
     iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, True))
+    # 5-points landmark
+    iterate_celeba(celeba_anno_path, celeba_iter_func(celeba_dir, save_dir, img_size, indices, files, True))
 
