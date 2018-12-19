@@ -2,6 +2,8 @@ import sys
 import os
 import config
 import cv2
+import math
+import random
 import numpy as np
 from collections import defaultdict
 
@@ -21,6 +23,7 @@ def wider_hard_example_test(net, wider_dir, save_dir, detect_func, indices, file
         nboxes = np.array(bboxes, dtype=np.float32).reshape(-1, 4)
         rects = detect_func(img, config.MIN_IMG_SIZE, test_img_size)
         img_dt_indices = defaultdict(int)
+        random.shuffle(rects)
         for rect in rects:
             x1, y1, x2, y2, prob = rect
             w, h = x2 - x1 + 1, y2 - y1 +1
@@ -31,9 +34,10 @@ def wider_hard_example_test(net, wider_dir, save_dir, detect_func, indices, file
                 or x1 >= x2 or y1 >= y2:
                 indices['filter_out'] += 1
                 continue
+            rect = convert_to_square(rect)
             iou = IoU(rect, nboxes)
             dt, label = gen_img_label(img, rect, bboxes, iou)
-            if dt != '':
+            if dt != '' and config.MAX_EXAMPLES[dt] > img_dt_indices[dt] :
                 img_dt_indices[dt] += 1
                 indices[dt] += 1
                 cropped_img = img[rect[1]:rect[3], rect[0]:rect[2]]
@@ -50,6 +54,13 @@ def store_rect_data(save_dir, size, dt, cropped_img, label, f, index):
     save_img_file = os.path.join(save_dir, dt, '%s.jpg' % index)
     cv2.imwrite(save_img_file, resized_img)
     f.write(save_img_file + " " + label + "\n")
+
+def convert_to_square(rect):
+    center_x, center_y = (rect[0] + rect[2]) / 2, (rect[1] + rect[3]) / 2
+    w, h = rect[2] - rect[0] + 1, rect[3] - rect[1] + 1
+    side = math.sqrt(w * h)
+    square = [center_x - side / 2, center_y - side /2, center_x + side / 2, center_y + side / 2]
+    return [int(x) for x in square]
 
 def gen_img_label(img, rect, bboxes, iou):
     max_iou = np.max(iou)
@@ -76,7 +87,9 @@ def gen_img_label(img, rect, bboxes, iou):
     return dt, label
 
 def get_prev_net(net):
-    if net == 'rnet':
+    if net == 'pnet':
+        prev_net = 'pnet'
+    elif net == 'rnet':
         prev_net = 'pnet'
     elif net == 'pnet':
         prev_net = 'rnet'
@@ -101,7 +114,7 @@ if __name__ == '__main__':
     lfw_dir   = os.path.join(config.LFW_DIR, 'lfw_%s' % script_type)
     lfw_anno_file = '%sImageList.txt' % script_type
     lfw_anno_path = os.path.join(lfw_dir, lfw_anno_file)
-    save_dir  = os.path.join('data_%s' % script_type, net)
+    save_dir  = os.path.join(config.DATA_DIR % 'ohem', net)
     try:
         os.makedirs(save_dir)
     except:
@@ -122,7 +135,7 @@ if __name__ == '__main__':
         # overwride daa file
         files[dt] = open(os.path.join(save_dir, '%s_%s.txt' % (dt, net)), 'w')
 
-    test_func = test_net(get_prev_net(net), config.MODEL_DIR, config.TEST_ITER)
+    test_func = test_net(get_prev_net(net), config.MODEL_DIR, prev_net_iter_num)
     iterate_wider(wider_anno_path,  wider_hard_example_test(net, wider_dir, save_dir, test_func, indices, files))
     iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, with_landm5=True))
 

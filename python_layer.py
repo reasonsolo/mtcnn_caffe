@@ -12,7 +12,8 @@ class DataLayer(caffe.Layer):
         self.net = param['net']
         self.img_size = config.NET_IMG_SIZES[self.net]
 
-        self.batch_loader = BatchLoader(param)
+        self.batch_loader = BatchLoader(param, "train")
+        self.ohem_batch_loader = BatchLoader(param, 'ohem')
         top[0].reshape(self.batch, 3, self.img_size, self.img_size)  # data
         top[1].reshape(self.batch, 1)  # label
         top[2].reshape(self.batch, 4)  # bbox
@@ -24,7 +25,8 @@ class DataLayer(caffe.Layer):
 
     def forward(self, bottom, top):
         task = random.choice(config.TRAIN_TASKS[self.net])
-        batch_data = self.batch_loader.next_batch(self.batch, task)
+        batch_data = self.batch_loader.next_batch(self.batch / 4, task)
+        batch_data += self.ohem_batch_loader.next_batch(3 * self.batch / 4, task)
         random.shuffle(batch_data)
         for i, datum in enumerate(batch_data):
             img, label, bbox, landm5 = datum

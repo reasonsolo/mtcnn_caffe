@@ -7,11 +7,13 @@ import mtcnn_pb2
 import numpy as np
 
 class BatchLoader:
-    def __init__(self, param):
+    def __init__(self, param, data_cat):
         self.net = param['net']
         self.img_size = config.NET_IMG_SIZES[self.net]
+        self.data_cat = data_cat
         self.db_envs = {}
-        self.db_path = os.path.join(config.DB_PATH, self.net)
+        self.db_path = os.path.join(config.DB_DIR % self.data_cat, self.net)
+
         self.db_entries = {}
 
         self.label_ratio = {}
@@ -46,7 +48,7 @@ class BatchLoader:
         data = []
         for k, dt in enumerate(dts):
             if k == len(dts) - 1:
-                sample_num = batch - len(data)
+                sample_num = int(batch - len(data))
             else:
                 sample_num = max(round(batch * self.task_dts_ratios[dt]), 1)
                 # sample_num = max(round(batch * ratios[dt]), 1)

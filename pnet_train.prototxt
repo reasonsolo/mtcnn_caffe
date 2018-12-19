@@ -9,7 +9,7 @@ layer {
   python_param {
     module: "python_layer"
     layer: "DataLayer"
-    param_str: '{"net": "pnet", "batch": 256}'
+    param_str: '{"net": "pnet", "batch": 256, "data_cat": "train"}'
   }
   include {
     phase: TRAIN

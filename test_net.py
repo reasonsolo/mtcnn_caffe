@@ -53,10 +53,10 @@ def test_pnet(img, min_img_size, net_size, net):
         out_h, out_w = label_prob.shape
         out_side = max(out_h, out_w)
         rect = tools.detect_face_12net(label_prob, bbox, out_side,
-                                       1 / scale, w, h, 0.75)
+                                       1 / scale, w, h, 0.7)
         rects += rect
 
-    rects = tools.NMS(rects, 0.75, 'iou')
+    rects = tools.NMS(rects, 0.7, 'iou')
     return rects
 
 def test_rnet(img, rects, min_img_size, net_size, net):
@@ -97,4 +97,5 @@ if __name__ == '__main__':
         sub_img = img[rect[1]:rect[3], rect[0]:rect[2]]
         print(sub_img.shape, rect)
         cv2.imwrite("pnet/test/%d_%f.jpg" % (i, rect[4]), sub_img)
+    print('%d rects generated' % len(rects))
 

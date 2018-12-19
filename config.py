@@ -12,10 +12,12 @@ DATA_TYPE_RATIOS = {
     'rnet': {'pos': 0.1, 'part': 0.15, 'neg': 0.55, 'landm5': 0.1},
     'rnet': {'pos': 0.1, 'part': 0.15, 'neg': 0.5, 'landm5': 0.15},
 }
-MAX_EXAMPLES = {'pos': 12, 'neg': 50, 'part': 24}
+MAX_EXAMPLES = {'pos': 12, 'neg': 50, 'part': 24, 'landm5': 20}
 
 LANDMARK_SIZE = 5
 
+DATA_DIR='data_%s'
+DB_DIR='db_%s'
 DB_PATH='db_train'
 DB_MAPSIZES = {'pos': 2 * 1024 * 1024 * 1024,
             'part': 6 * 1024 * 1024 * 1024,
@@ -24,12 +26,13 @@ DB_MAPSIZES = {'pos': 2 * 1024 * 1024 * 1024,
 
 MIN_IMG_SIZE = 40
 
-TRAIN_DATA_DIR = 'data_train'
+TRAIN_DATA_DIR = 'data_%s'
 TRAIN_TASKS = {
     'pnet': ['label', 'bbox'],
     'rnet': ['label', 'bbox', 'landmark'],
     'onet': ['label', 'bbox', 'landmark'],
 }
+
 
 WIDER_DIR='./'
 LFW_DIR='./'

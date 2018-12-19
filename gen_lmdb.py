@@ -56,17 +56,20 @@ def write_lmdb(txn, lines, net, dt):
 
 if __name__ == '__main__':
     net = sys.argv[1]
-    data_dir = config.TRAIN_DATA_DIR
+    data_cat = sys.argv[2]
+
     dts = config.DATA_TYPES.keys()
+    data_dir =  config.DATA_DIR % data_cat
+    db_dir = config.DB_DIR % data_cat
     try:
-        os.makedirs(config.DB_PATH)
-        os.makedirs('%s/%s' % (config.DB_PATH, net))
+        os.makedirs(db_dir)
+        os.makedirs('%s/%s' % (db_dir, net))
     except:
         pass
 
     for dt in dts:
-        lmdb_path = '%s/%s/%s.lmdb' % (config.DB_PATH, net, dt)
-        shutil.rmtree(lmdb_path, ignore_errors=True)
+        lmdb_path = '%s/%s/%s.lmdb' % (db_dir, net, dt)
+        # shutil.rmtree(lmdb_path, ignore_errors=True)
         env = lmdb.open(lmdb_path, map_size=config.DB_MAPSIZES[dt])
         with env.begin(write=True) as txn:
             img_list = '%s/%s/%s_%s.txt' % (data_dir, net, dt, net)

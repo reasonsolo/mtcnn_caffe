@@ -120,6 +120,18 @@ def gen_crop_bbox_landm5(img, bboxes, landm5s, img_size):
             transformed_landm5 = [(x - offset_x -bbox[0], y - offset_y - bbox[1]) for x, y in landm5]
             yield (cbox, size), bbox, transformed_landm5
 
+def gen_crop_pos_boxes(img, bboxes, img_size):
+    for bbox in bboxes:
+        x1, y1, x2, y2 = bbox
+        w = x2 - x1 + 1
+        h = y2 - y1 + 1
+
+        # omit invalid box or too small box
+        if max(w, h) < 40 or min(w, h) / 2 <= img_size or x1 < 0 or y1 <0:
+            continue
+        for i in range(0, 16):
+            yield gen_pos_box(img, img_size, bbox), bbox
+
 def gen_crop_boxes(img, bboxes, img_size):
     for i in range(0, 50):
         yield gen_rand_box(img, img_size), None
