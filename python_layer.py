@@ -25,8 +25,8 @@ class DataLayer(caffe.Layer):
 
     def forward(self, bottom, top):
         task = random.choice(config.TRAIN_TASKS[self.net])
-        batch_data = self.batch_loader.next_batch(self.batch / 4, task)
-        batch_data += self.ohem_batch_loader.next_batch(3 * self.batch / 4, task)
+        batch_data = self.batch_loader.next_batch(self.batch * 7 / 8, task)
+        batch_data += self.ohem_batch_loader.next_batch(self.batch / 8, task)
         random.shuffle(batch_data)
         for i, datum in enumerate(batch_data):
             img, label, bbox, landm5 = datum

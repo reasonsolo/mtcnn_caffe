@@ -24,7 +24,7 @@ def wider_iter_func(wider_dir, save_dir, img_size, indices, files):
             if cbox is None:
                 continue
             iou = IoU(cbox, nboxes)
-            dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, None, True)
+            dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, None, False)
             if dt != '':
                 store_gen_box(save_dir, img_size, dt, cropped_img, label, files[dt], indices[dt])
                 indices[dt] += 1
@@ -51,7 +51,7 @@ def lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, with_landm5=True)
             if cbox is None:
                 continue
             iou = IoU(cbox, nboxes)
-            dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, landm5, True)
+            dt, cropped_img, label = gen_img_label(img, cbox, size, bbox, iou, landm5, with_landm5)
             if dt != '':
                 store_gen_box_lfw(save_dir, img_size, dt, cropped_img, label, files[dt], indices[dt])
                 indices[dt] += 1
@@ -75,7 +75,7 @@ def celeba_iter_func(celeba_dir, save_dir, img_size, indices, files, store_img=F
         norm_landm5 = [(float(x) / w, float(y) / h) for x, y in nlandm5]
         label = str(config.DATA_TYPES[dt])
         label += ' -1' * 4    # placeholders for bbox
-        lable += ' '.join(['%.6f %.6f' % (x, y) for x, y in norm_landm5])
+        label += ' '.join(['%.6f %.6f' % (x, y) for x, y in norm_landm5])
         resized_img = cv2.resize(cropped_img, (img_size, img_size), interpolation=cv2.INTER_LINEAR)
         save_img_file = os.path.join(save_dir, dt, '%s.jpg' % indices[dt])
         cv2.imwrite(save_img_file, resized_img)
@@ -201,11 +201,11 @@ def gen_pos_box(img, img_size, box):
         return None, None
     return [nx1, ny1, nx2, ny2], size
 
-def store_gen_box(save_dir, dt, cropped_img, label, size, data_file, index):
+def store_gen_box(save_dir, size, dt, cropped_img, label, data_file, index):
     resized_img = cv2.resize(cropped_img, (size, size), interpolation=cv2.INTER_LINEAR)
     save_img_file = os.path.join(save_dir, dt, '%s.jpg' % index)
     cv2.imwrite(save_img_file, resized_img)
-    data_file.write(save_img_file + " " + label)
+    data_file.write(save_img_file + " " + label + "\n")
 
 def gen_img_label(img, cbox, size, bbox, iou, landm5=None, with_landm5=False):
     dt = ''
@@ -272,9 +272,9 @@ if __name__ == '__main__':
     lfw_anno_file = '%sImageList.txt' % script_type
     lfw_anno_path = os.path.join(lfw_dir, lfw_anno_file)
 
-    celeba_dir   = os.path.join(config.CELEBA_DIR, 'img_align_celeba')
-    celeba_anno_file = 'list_landmarks_align_celeba.txt'
-    celeba_anno_path = os.path.join(config.CELEBA_DIR, lfw_anno_file)
+    # celeba_dir   = os.path.join(config.CELEBA_DIR, 'img_align_celeba')
+    # celeba_anno_file = 'list_landmarks_align_celeba.txt'
+    # celeba_anno_path = os.path.join(config.CELEBA_DIR, lfw_anno_file)
 
     save_dir  = os.path.join('data_%s' % script_type, net)
     try:
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     # bounding box
     iterate_wider(wider_anno_path,  wider_iter_func(wider_dir, save_dir, img_size, indices, files))
     # bounding box and 5-points landmark
-    iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, True))
+    iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, False))
     # 5-points landmark
-    iterate_celeba(celeba_anno_path, celeba_iter_func(celeba_dir, save_dir, img_size, indices, files, True))
+    # iterate_celeba(celeba_anno_path, celeba_iter_func(celeba_dir, save_dir, img_size, indices, files, True))
 

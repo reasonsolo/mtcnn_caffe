@@ -24,7 +24,7 @@ DB_MAPSIZES = {'pos': 2 * 1024 * 1024 * 1024,
             'neg': 10 * 1024 * 1024 * 1024,
             'landm5': 5 * 1024 * 1024 * 1024,}
 
-MIN_IMG_SIZE = 40
+MIN_IMG_SIZE = 48
 
 TRAIN_DATA_DIR = 'data_%s'
 TRAIN_TASKS = {
@@ -34,8 +34,9 @@ TRAIN_TASKS = {
 }
 
 
-WIDER_DIR='./'
-LFW_DIR='./'
+WIDER_DIR  = './'
+LFW_DIR    = './'
+CELEBRA_DIR= './'
 
-MODEL_DIR='./models/'
-TEST_ITER=300000
+MODEL_DIR = './models/'
+TEST_ITER = 300000

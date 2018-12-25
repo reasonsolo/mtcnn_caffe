@@ -137,5 +137,5 @@ if __name__ == '__main__':
 
     test_func = test_net(get_prev_net(net), config.MODEL_DIR, prev_net_iter_num)
     iterate_wider(wider_anno_path,  wider_hard_example_test(net, wider_dir, save_dir, test_func, indices, files))
-    iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, with_landm5=True))
+    # iterate_lfw(lfw_anno_path, lfw_iter_func(lfw_dir, save_dir, img_size, indices, files, with_landm5=True))
 

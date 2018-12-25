@@ -36,7 +36,7 @@ def load_model(model_dir, net, iter_num):
 
 
 def test_pnet(img, min_img_size, net_size, net):
-    norm_img = (img.copy() - 127.5) / 128
+    norm_img = (img.copy() - 127.5) / 127.5
     h, w, c = norm_img.shape
     scales = gen_scales(w, h, min_img_size, net_size)
     rects = []
@@ -44,17 +44,24 @@ def test_pnet(img, min_img_size, net_size, net):
         sh = int(h * scale)
         sw = int(w * scale)
         scale_img = cv2.resize(norm_img, (sw, sh))
+        scale_img = cv2.transpose(scale_img)
         scale_img = np.swapaxes(scale_img, 0, 2)
-        net.blobs['data'].reshape(1, 3, sw, sh)
+        net.blobs['data'].reshape(1, 3, sh, sw)
         net.blobs['data'].data[...] = scale_img
+        print(scale_img.shape)
+        print(scale_img)
         out = net.forward()
-        label_prob = out[config.NET_OUTPUTS['pnet']['label']][0][1]
+        conv1 = net.blobs["conv1"]
+        label_prob = out[config.NET_OUTPUTS['pnet']['label']][0]
         bbox = out[config.NET_OUTPUTS['pnet']['bbox']][0]
-        out_h, out_w = label_prob.shape
+        print(conv1.data.shape)
+        print(conv1.data)
+        out_h, out_w = label_prob[1].shape
         out_side = max(out_h, out_w)
-        rect = tools.detect_face_12net(label_prob, bbox, out_side,
-                                       1 / scale, w, h, 0.7)
+        rect = tools.detect_face_12net(label_prob[1], bbox, out_side,
+                                       1 / scale, w, h, 0.65)
         rects += rect
+        break
 
     rects = tools.NMS(rects, 0.7, 'iou')
     return rects
@@ -68,6 +75,7 @@ def test_rnet(img, rects, min_img_size, net_size, net):
         resized_img = np.swapaxes(resized_img, 0, 2)
         net.blobs['data'].data[i] = resized_img
     out = net.forward()
+
     label_prob = out[config.NET_OUTPUTS['rnet']['label']][0][1]
     bbox = out[config.NET_OUTPUTS['rnet']['bbox']][0][1]
     rects = tools.filter_face_24net(label_prob, bbox, rects, w, h, 0.7)
@@ -97,5 +105,9 @@ if __name__ == '__main__':
         sub_img = img[rect[1]:rect[3], rect[0]:rect[2]]
         print(sub_img.shape, rect)
         cv2.imwrite("pnet/test/%d_%f.jpg" % (i, rect[4]), sub_img)
+
+    for i, rect in enumerate(rects):
+        cv2.rectangle(img, (rect[0], rect[1]), (rect[2], rect[3]), (255,0,0), 3)
+    cv2.imwrite("pnet/result.jpg", img)
     print('%d rects generated' % len(rects))
 
