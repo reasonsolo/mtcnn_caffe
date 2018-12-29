@@ -140,7 +140,7 @@ def _create_index_file(
     table_row_count = 1
     html += ['<hr>', '<table>']
     # For each image file, potentially create a new <tr> and create a new <td>
-    for image_file in image_files[0:500]:
+    for image_file in image_files[0:50]:
         if table_row_count == 1:
             html.append('<tr>')
         img_src = _get_thumbnail_src_from_file(

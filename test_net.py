@@ -28,12 +28,10 @@ def regularize_rect(img_shape, rect):
     y2 = max(0, min(y2, h))
     return [x1, x2, y1, y2, prob]
 
-
 def load_model(model_dir, net, iter_num):
     proto_path = os.path.join(model_dir, '%s.prototxt' % net)
     model_path = os.path.join(model_dir, '%s_iter_%d.caffemodel' % (net, iter_num))
     return caffe.Net(proto_path, model_path, caffe.TEST)
-
 
 def test_pnet(img, min_img_size, net_size, net):
     norm_img = (img.copy() - 127.5) / 127.5

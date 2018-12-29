@@ -103,7 +103,7 @@ def detect_face_12net(cls_prob,roi,out_side,scale,width,height,threshold):
     boundingBox = []
 
     for (x,y), prob in np.ndenumerate(cls_prob):
-        if(prob >= threshold):
+        if(prob > threshold):
             original_x1 = int((stride*x + 1)*scale)
             original_y1 = int((stride*y + 1)*scale)
             original_w  = int((12.0 -1)*scale)

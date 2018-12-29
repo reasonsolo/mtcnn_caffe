@@ -38,6 +38,9 @@ class BatchLoader:
                              'land5': ['landm5']}
         self.task_dts_ratios =  config.DATA_TYPE_RATIOS[self.net]
 
+    def is_loaded():
+        return self.total_entries > 0
+
     def next_batch(self, batch, task):
         # return self.get_data(self.task_dts_map[task], batch)
         return self.get_data(self.task_dts_ratios.keys(), batch)

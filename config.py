@@ -37,6 +37,7 @@ TRAIN_TASKS = {
 WIDER_DIR  = './'
 LFW_DIR    = './'
 CELEBRA_DIR= './'
+W300_DIR   = '/data/300W-Convert/300W-Original/'
 
 MODEL_DIR = './models/'
 TEST_ITER = 300000

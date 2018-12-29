@@ -42,11 +42,11 @@ def iterate_lfw(anno_path, functor):
             bbox = [box[0], box[2], box[1], box[3]]
             landm5 = [float(x) for x in segs[5:]]
             assert(len(landm5) == 10)
-            try:
-                functor(img_name, bbox, landm5)
-            except Exception as ex:
-                print(line)
-                raise ex
+            functor(img_name, bbox, landm5)
+            #try:
+            #except Exception as ex:
+            #    print(line)
+            #    raise ex
 
 def iterate_celeba_align(anno_path, functor):
     """
@@ -65,18 +65,22 @@ def iterate_celeba_align(anno_path, functor):
                 raise ex
 
 
-def iterate_300W(dataset_dir, functor):
+def iterate_300w(dataset_dir, functor, with_pts=True):
     """
     functor(img_path, pts)
     """
-    for root, dirs, files in os.walk("."):
+    for root, dirs, files in os.walk(dataset_dir):
         for pts_file in filter(lambda f: f.endswith('pts'), files):
             img_file = pts_file[:-3] + 'jpg'
-            with open(pts_file, 'r') as ptsf:
-                pts = []
-                for line in ptsf[3:-1]:
-                    pt = [float(x) for x in line.split()]
-                    pts.append(tuple(pt))
+            pts = []
+            pts_path = os.path.join(dataset_dir, root, pts_file)
+            img_path = os.path.join(dataset_dir, root, img_file)
+            print(img_path)
+            if with_pts:
+                with open(pts_file, 'r') as ptsf:
+                    for line in ptsf[3:-1]:
+                        pt = [float(x) for x in line.split()]
+                        pts.append(tuple(pt))
             try:
                 functor(img_path, pts)
             except Exception as ex:
