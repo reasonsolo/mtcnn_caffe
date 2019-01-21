@@ -4,6 +4,7 @@ import os
 
 def fast_mtcnn():
   path = os.path.dirname(__file__)
+  print('%s/mtcnn_local/mtcnn_local' % path)
   p = Popen(['%s/mtcnn_local/mtcnn_local' % path, '%s/mtcnn_local/models/' % path], stdin=PIPE, stdout=PIPE)
   def detect(img):
     p.stdin.write(img + "\n")

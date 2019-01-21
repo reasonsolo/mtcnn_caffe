@@ -1,0 +1,5 @@
+message Datum {
+  optional bytes img = 1;
+  repeated float pts = 2;
+  optional float eye_dist = 3;
+}

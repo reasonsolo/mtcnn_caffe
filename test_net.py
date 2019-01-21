@@ -93,9 +93,9 @@ def test_net(net, model_dir, iter_num):
 if __name__ == '__main__':
     net = sys.argv[1]
     iter_num = int(sys.argv[2])
+    img_path = sys.argv[3]
 
     test_func = test_net(net, config.MODEL_DIR, iter_num)
-    img_path = sys.argv[3]
     img = cv2.imread(img_path)
 
     rects = test_func(img, config.MIN_IMG_SIZE, config.NET_IMG_SIZES['pnet'])
