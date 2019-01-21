@@ -51,20 +51,6 @@ layer {
 }
 
 layer {
-  name: "ActivationTangH1"
-  bottom: "Conv1"
-  top: "ActivationTangH1"
-  type: "TanH"
-}
-
-layer {
-  name: "ActivationAbs1"
-  bottom: "ActivationTangH1"
-  top: "Abs1"
-  type: "AbsVal"
-}
-
-layer {
     name: "Pool1"
     type: "Pooling"
     # bottom: "Abs1"
@@ -105,28 +91,6 @@ layer {
         }
     }
 }
-
-layer {
-  name: "ActivationTangH2"
-  bottom: "Conv2"
-  top: "ActivationTangH2"
-  type: "TanH"
-}
-
-layer {
-  name: "ActivationAbs2"
-  bottom: "ActivationTangH2"
-  top: "Abs2"
-  type: "AbsVal"
-}
-
-layer {
-  name: "prelu2"
-  type: "PReLU"
-  bottom: "Conv2"
-  top: "prelu2"
-}
-
 
 layer {
     name: "Pool2"
@@ -171,20 +135,6 @@ layer {
     }
 }
 
-
-layer {
-  name: "ActivationTangH3"
-  bottom: "Conv3"
-  top: "ActivationTangH3"
-  type: "TanH"
-}
-
-layer {
-  name: "ActivationAbs3"
-  bottom: "ActivationTangH3"
-  top: "Abs3"
-  type: "AbsVal"
-}
 
 layer {
   name: "prelu3"
@@ -237,20 +187,6 @@ layer {
 
 
 layer {
-  name: "ActivationTangH4"
-  bottom: "Conv4"
-  top: "ActivationTangH4"
-  type: "TanH"
-}
-
-layer {
-  name: "ActivationAbs4"
-  bottom: "ActivationTangH4"
-  top: "Abs4"
-  type: "AbsVal"
-}
-
-layer {
   name: "prelu4"
   type: "PReLU"
   bottom: "Conv4"
@@ -283,20 +219,6 @@ layer {
             value: 0
         }
     }
-}
-
-layer {
-  name: "ActivationTangH5"
-  bottom: "Dense1"
-  top: "ActivationTangH5"
-  type: "TanH"
-}
-
-layer {
-  name: "ActivationAbs5"
-  bottom: "ActivationTangH5"
-  top: "Abs5"
-  type: "AbsVal"
 }
 
 layer {
